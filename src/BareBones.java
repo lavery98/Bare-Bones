@@ -2,7 +2,9 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,18 +27,11 @@ public class BareBones {
 			loadCodeFile(filename);
 			
 			int currentPosition = 0;
+			Deque<Integer> loopStack = new ArrayDeque<Integer>();
 			
+			// Loop until we are at the end of the file/program
 			while(currentPosition != fileLines.size()) {
 				String[] parts = fileLines.get(currentPosition).split(" ");
-				
-				currentPosition++;
-			}
-			
-			/*BufferedReader reader = new BufferedReader(new FileReader(filename));
-			
-			String fileLine;
-			while((fileLine = reader.readLine()) != null) {
-				String[] parts = fileLine.split(" ");
 				
 				if(parts[0].equals("clear")) {
 					if(variables.containsKey(parts[1])) {
@@ -63,18 +58,30 @@ public class BareBones {
 						}
 					}
 				} else if(parts[0].equals("while")) {
-					
+					if(variables.containsKey(parts[1])) {
+						Variable checkVariable = variables.get(parts[1]);
+						
+					} else {
+						throw new Exception("Variable not defined. " + fileLines.get(currentPosition));
+					}
+				} else if(parts[0].equals("end;")) {
+					if(loopStack.isEmpty()) {
+						throw new Exception("Unexpected end." + fileLines.get(currentPosition));
+					} else {
+						
+					}
 				} else {
 					// TODO: Make more user friendly
-					throw new Exception("Unknown command used. " + fileLine);
+					throw new Exception("Unknown command used. " + fileLines.get(currentPosition));
 				}
 				
-				System.out.println(fileLine);
+				System.out.println(fileLines.get(currentPosition));
 				
 				System.out.println("**************************************");
 				System.out.println("Current Variables");
 				System.out.println("**************************************");
 				
+				// Loop through and output variables
 				for(Map.Entry<String, Variable> entry : variables.entrySet()) {
 					System.out.print(entry.getKey());
 					Variable oldVariable = entry.getValue();
@@ -82,9 +89,9 @@ public class BareBones {
 					System.out.print(oldVariable.getVariableValue());
 					System.out.println();
 				}
+				
+				currentPosition++;
 			}
-			
-			reader.close();*/
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -94,8 +101,10 @@ public class BareBones {
 		BufferedReader reader;
 		
 		try {
+			// Try and open the file given
 			reader = new BufferedReader(new FileReader(filename));
 			
+			// Add each line of the file to the array list
 			String line;
 			while((line = reader.readLine()) != null) {
 				fileLines.add(line);
