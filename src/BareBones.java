@@ -11,6 +11,7 @@ import java.util.Map;
 public class BareBones {
 
 	protected Map<String, Variable> variables = new HashMap<String, Variable>();
+	protected Map<Integer, Integer> whileBlocks = new HashMap<Integer, Integer>();
 	protected ArrayList<String> fileLines = new ArrayList<String>();
 	
 	public static void main(String[] args) {
@@ -28,9 +29,11 @@ public class BareBones {
 			
 			int currentPosition = 0;
 			Deque<Integer> loopStack = new ArrayDeque<Integer>();
-			
+
 			// Loop until we are at the end of the file/program
 			while(currentPosition != fileLines.size()) {
+				System.out.println(fileLines.get(currentPosition));
+				
 				String[] parts = fileLines.get(currentPosition).split(" ");
 				
 				if(parts[0].equals("clear")) {
@@ -61,21 +64,20 @@ public class BareBones {
 					if(variables.containsKey(parts[1])) {
 						Variable checkVariable = variables.get(parts[1]);
 						
+						if(checkVariable.getVariableValue() != 0) {
+							loopStack.push(currentPosition);
+						} else {
+							currentPosition = whileBlocks.get(currentPosition);
+						}
 					} else {
 						throw new Exception("Variable not defined. " + fileLines.get(currentPosition));
 					}
-				} else if(parts[0].equals("end;")) {
-					if(loopStack.isEmpty()) {
-						throw new Exception("Unexpected end." + fileLines.get(currentPosition));
-					} else {
-						
-					}
+				} else if(parts[0].equals("end")) {
+					currentPosition = loopStack.pop() - 1;
 				} else {
 					// TODO: Make more user friendly
 					throw new Exception("Unknown command used. " + fileLines.get(currentPosition));
 				}
-				
-				System.out.println(fileLines.get(currentPosition));
 				
 				System.out.println("**************************************");
 				System.out.println("Current Variables");
@@ -104,14 +106,42 @@ public class BareBones {
 			// Try and open the file given
 			reader = new BufferedReader(new FileReader(filename));
 			
+			// These variables are used to find the while blocks
+			int lineCount = 0;
+			Deque<Integer> loopStack = new ArrayDeque<Integer>();
+			
 			// Add each line of the file to the array list
 			String line;
 			while((line = reader.readLine()) != null) {
-				fileLines.add(line);
+				if(!line.endsWith(";")) {
+					throw new Exception("There is a missing semi-colon. " + line);
+				}
+				
+				String newLine = line.substring(0, line.length() - 1).trim();
+				
+				fileLines.add(newLine);
+				
+				String[] parts = newLine.split(" ");
+				
+				if(parts[0].equals("while")) {
+					loopStack.push(lineCount);
+				} else if(parts[0].equals("end")) {
+					int whileStart = loopStack.pop();
+					
+					whileBlocks.put(whileStart, lineCount);
+				}
+				
+				lineCount++;
 			}
+			
 			reader.close();
+			
+			if(loopStack.size() > 0) {
+				throw new Exception("A while loop does not end.");
+			}
 		} catch(Exception e) {
 			System.err.println("There was an error reading the code file");
+			e.printStackTrace();
 		}
 	}
 }
